@@ -1,4 +1,13 @@
 #!/bin/bash
+# setting stuff up
+printf '\e[8;50;200t'
+shopt -s extglob
+function sync(){
+	whereami
+	cd ${SOURCEPATH}
+	git pull 1>/dev/null 2>/dev/null
+}
+# function definitions
 function whereami(){
 	while [ -h "${SOURCE}" ]; do 
 		DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
@@ -11,14 +20,16 @@ function whereami(){
 	export SOURCEPATH="`( cd \"${SOURCEPATH}\" && pwd )`"	
 }
 function countdown(){
-	event=`date -d "$@" +%s`
+	input=$@
+	event=`date -d "${input}" +%s`
+	echo ${event}
 	now=`date +%s` 
 	remaining=`expr ${event} - ${now}` 
 	days=`expr ${remaining} % 604800 / 86400`
 	if [ ${days} -eq 0 ]; then
 		${SOURCEPATH}/figlet -c "HAPPY BIRTHDAY"
 	fi
-	while [ ${remaining} -gt 0 ] || [ ! ${ACTION} ]; do
+	while [ "${remaining}" -gt 0 ] || [ ! "${ACTION}" ]; do
 		now=`date +%s` && remaining=`expr ${event} - ${now}` 
 		seconds=`expr ${remaining} % 60` && remaining=`expr ${remaining} - $seconds` 
 		minutes=`expr ${remaining} % 3600 / 60` && remaining=`expr ${remaining} - $minutes` 
@@ -32,17 +43,14 @@ function countdown(){
 	kill $!	
 }
 function parameters(){
-	SKYCOLOR=('purple' 'red' 'green' 'orange')
-	STIMULUS=('shadow' 'light' 'sound' 'song')
-	ITEM=('biscuit' 'note' 'picture' 'key' 'watch')
-	VOICES=('Daniel' 'Amelie' 'Fiona' 'Juan' 'Karen')
-	shopt -s extglob
+	whereami
+	SKYCOLOR=('purple' 'red' 'green')
+	STIMULUS=('song')
+	ITEM=('key' 'watch')
 }
 function intro(){
-	framerate=1
-	textread=5
-	printf '\e[8;50;200t'
-	whereami
+	framerate=.75
+	textread=4
 	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In" && sleep ${framerate}
 	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a" && sleep ${framerate}
 	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension" && sleep ${framerate}
@@ -76,175 +84,377 @@ function intro(){
 	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa " (    o) (    o)" && sleep ${framerate}
 	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " --- ---" && sleep ${framerate}	
 	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa " (  *  ) (  *  )" && sleep ${framerate}	
+	# cue dream sequence animation
+	animate_dream_sequence
+}
+function animate_dream_sequence(){
 	/usr/bin/afplay ${SOURCEPATH}/.hood/intro.mp3 &
-	${SOURCEPATH}/.hood/ASCIIMoviePlayer ${SOURCEPATH}/.hood/stars.mp4
+	${SOURCEPATH}/.hood/VLC.app/Contents/MacOS/VLC --play-and-exit --no-video-title-show --fullscreen --embedded-video  ${SOURCEPATH}/.hood/stars.mp4 2> /dev/null 1>/dev/null
 }
 function start_text(){
 	clear && printf '\e[3J'	
-	seed=$(( ( RANDOM % 4 ) + 0 ))	
-	say -v ${VOICES[$seed]} "You suddenly wake up in a soft bed of grass." &
-	printf "You suddenly wake up in a soft bed of grass. ⏎ " && read
-	say -v ${VOICES[$seed]} "You feel like you have been dreaming a long time." &
-	printf "You feel like you've been dreaming a long time. ⏎ " && read
-	say -v ${VOICES[$seed]} "You get a feeling that you are not in the right place." &
-	printf "You get a feeling that you are not in the right place. ⏎ " && read
+	printf "You suddenly wake up in a soft bed of grass. ⏎ " && read -r
+	printf "You feel like you've been dreaming a long time. ⏎ " && read -r
+	printf "You get a feeling that you are not in the right place. ⏎ " && read -r
+	numskycolor=$(echo "${SKYCOLOR[@]}" | wc -w)
+	numstimulus=$(echo "${STIMULUS[@]}" | wc -w)
+	if [ "$(echo "${SKYCOLOR[@]}" | wc -w)" -gt 1 ]; then
+		skyseed=$(( ( RANDOM % 3 ) + 0 ))
+	else
+		skyseed=0
+	fi
+	if [ "$(echo ${STIMULUS[@]} | wc -w)" -gt 1 ]; then
+		seed=$(( ( RANDOM % $(echo ${STIMULUS} | wc -w) ) + 0 ))	
+		echo ${seed}
+	else
+		seed=0
+	fi	
+	start
 }
 function start(){
-	clear && printf '\e[3J'
-	say -v ${VOICES[$seed]} "What do you do?" &
-	if [ ${EVENT} ]; then
-		event ${EVENT} ${ACTION}
+	clear && printf '\e[3J' && printf '\e[5t'
+	read -r
+	if [ "$(echo "${STIMULUS[@]}" | grep 'done' | sort -u | wc -l)" -eq 1 ] ; then
+		EVENT='oracle'
 	else
-	printf "What do you do?\n"		
-	read ACTION
-	case ${ACTION} in
-		'sleep'|'lay down'|'lie down'|'dream')
-			printf 'You go back to sleep ⏎ ' && read
-			start_text
-		;;
-		'stand up'|'get up'|'stand'|'sit up' | 'sit down')
-			printf "You ${ACTION} ⏎ " && read
-			printf "You notice a ${ITEM[$seed]} in your pocket ⏎ " && read
-			POCKET+=" ${ITEM[$seed]} "
-			POCKET=$(echo -e "${POCKET// /\\n}" | sort -u)
-			start			
-		;;
-		'check pockets')
-			printf 'You check your pockets ⏎ ' && read
-			if ${POCKET}; then
-				printf "You find: " && printf "a %s .. " ${POCKET} && printf ' ⏎ ' && read
-			else
-				printf "Your pockets are empty"
-			fi
-			start			
-		;;		
-		 *${ITEM[$seed]})
-			printf "You take out the ${ITEM[$seed]} " && read
-			check_item
-		;;
-		'look around')
-			printf "You notice the sky is an odd shade of ${SKYCOLOR[$seed]} ⏎ " && read
-			printf "You notice a ${STIMULUS[$seed]} coming from the treeline ⏎ " && read
-			start
-		;;
-		'listen')
-			printf "You notice the sky is an odd shade of ${SKYCOLOR[$seed]} ⏎ " && read
-			printf "You notice a ${STIMULUS[$seed]} coming from the treeline ⏎ " && read
-			start
-		;;		
-		'walk')
-			printf "You walk towards the ${STIMULUS[$seed]} ⏎ " && read
-			walk
-		;;
-		'run')
-			printf "You run like a crazed chipmunk ⏎ " && read
-			run			
-		;;		
-		'hide')
-			printf "You jump into a prickly hedge ⏎ " && read
-			printf "The ${STIMULUS[$seed]} gets closer ⏎ " && read
-			hide
-		;;
-		*)
-			printf "Sorry that action is not available in this dimension (yet)... ⏎ " && read
-			start
-	esac
-	clear
-	start
+		EVENT='start'
+	fi
+	# don't repeat quests
+	while [ "${STIMULUS[$seed]}" == 'done' ]; do seed=$(( ( RANDOM % 3 ) + 0 ));done
+	# check whether to continue start quests
+	if [ "${EVENT}" != 'start' ]; then
+		event "${EVENT}"
+	else	
+		printf "What do you do?\n"		
+		read -r ACTION
+		case "${ACTION}" in
+			'sleep'|'lay down'|'lie down'|'dream')
+				printf 'You go back to sleep ⏎ ' && read -r
+				start_text
+			;;
+			'stand up'|'get up'|'stand'|'sit up' | 'sit down')
+				printf "You %s ⏎ " "${ACTION}" && read -r
+				printf "You notice a %s in your pocket ⏎ " "${ITEM[$seed]}" && read -r
+				POCKET+=" ${ITEM[$seed]} "
+				POCKET=$(echo -e "${POCKET// /\\n}" | sort -u)
+				start			
+			;;
+			'check pocket[s]')
+				printf 'You check your pockets ⏎ ' && read -r
+				if [ "${POCKET}" ]; then
+					printf "You find: " && printf "a %s .. " "${POCKET}" && printf ' ⏎ ' && read -r
+				else
+					printf "Your pockets are empty"
+				fi
+				start			
+			;;		
+			 +${ITEM[$seed]})
+				printf "You take out the %s " "${ITEM[$seed]}" && read -r
+				check_item "${ITEM[$seed]}"
+			;;
+			'look around'|'look')
+				printf "You notice the sky is an odd shade of %s ⏎ " "${SKYCOLOR[$skyseed]}" && read -r
+				printf "You notice a %s coming from the treeline ⏎ " "${STIMULUS[$seed]}" && read -r
+				start
+			;;
+			'listen')
+				printf "You notice the sky is an odd shade of %s ⏎ " "${SKYCOLOR[$skyseed]}" && read -r
+				printf "You notice a %s coming from the treeline ⏎ " "${STIMULUS[$seed]}" && read -r
+				start
+			;;		
+			'walk'|'run')
+				printf "You move towards the %s ⏎ " "${STIMULUS[$seed]}" && read -r
+				walk
+			;;
+			'hide')
+				printf "You jump into a prickly hedge ⏎ " && read -r
+				printf "The %s gets closer ⏎ " "${STIMULUS[$seed]}" && read -r
+				hide
+			;;
+			*)
+				printf "Sorry that action is not available in this dimension (yet)... ⏎ " && read -r
+				start
+		esac
+		clear
+		start
 	fi	
 }
 function event(){
-echo ''
+	case ${1} in
+		'oracle' )
+			event_oracle
+			;;
+	esac
+}
+function event_oracle(){
+	clear
+	printf "Looking up you notice that the sky has begun to turn back to blue ⏎ " && read -r 	
+	printf "A spiral of clouds begins to grow from an infinitesimally small point  ⏎ " && read -r 	
+	printf '\n'
+	printf "How strange!  ⏎ " && read -r 	
+	printf '\n'
+	printf "A slim humanoid shape emerges from the spiral  ⏎ " && read -r 	
+	printf "At first it looks like the shape will float over you and into the distance  ⏎ " && read -r 	
+	printf "However you grow alarmed as the shape rapidly grows in size  ⏎ " && read -r 	
+	printf '\n'
+	printf "... ⏎ " && read -r 	
+	printf '\n'
+	printf "Mere seconds later you are looking into deep purple ocean eyes, a palm's length from your own ⏎ " && read -r 	
+	printf "You feel stripped naked by the penetrating eyes ⏎ " && read -r 	
+	printf '\n'
+	say -v Karen "I have been watching you dream"
+	sleep 1
+	say -v Karen "Did you find something?"
+	read -p "Should I tell her about the card? >> " RESPONSE
+	if [ "${RESPONSE}" = 'yes' ] || [ "$(echo ${RESPONSE} | grep -E '.*card.*')" ]; then
+		check_item card
+		say -v Karen "The fifteenth tarot, Luna."
+		sleep 0.5
+		say -v Karen "A symbol of the fears and anxieties that hold us back"
+		say -v Karen "The answer to your question is on the back"
+		sleep 1
+		say -v Karen "It is a Cesarian Cipher encoded with a special number"
+		sleep 1
+		say -v Karen "Even I, an oracle, cannot penetrate this mystery without your help"
+		sleep 1 
+		say -v Karen "Which number do you believe is the cipher?"
+		read -p "I need to give the oracle a number >> " CIPHER
+		if [ "${CIPHER}" -eq '13 ' ]; then
+			say -v Karen "Ah the number 13"
+			sleep 1
+			say -v Karen "I will apply the Cesarian Shift."
+			sleep 1
+			say -v Karen "I will move every letter in the alphabet over by thirteen and reconstruct the message"
+			sleep 2
+			say -v Karen "Here is your message"
+			clear 
+			${SOURCEPATH}/.hood/figlet -w 60 -c -f contessa "LE MOT DE PASSE EST L I M I N A"
+			sleep 10
+			say -v Karen "Limina is a magical word. Hinting at the threshold between dimensions. I hope it serves you well."
+			say -v Karen "Now Wake Up, the clock is ticking"
+			# go back to sleep		
+			animate_dream_sequence			
+			exit
+		else
+			say -v Karen "Ah the number ${CIPHER}"
+			sleep 1
+			say -v Karen "I will apply the Cesarian Shift."
+			sleep 1
+			say -v Karen "I am experiencing great difficulty. This number is not correct. I will have to shut down this simulation."
+			sleep 1
+			say -v Karen "You will now wake up and have to dream all over again some other time"
+			# go back to sleep		
+			animate_dream_sequence
+			# wake up again at start
+			start_text	
+		fi		
+	else
+		say -v Karen "I can see the past present and future."
+		say -v Karen "Your fortune, then."
+		open -a Safari http://hkessner.com/wats1020-dom-basics/
+		say -v Karen "You will now wake up and have to dream all over again some other time"
+		exit
+	fi
 }
 function hide(){
-echo hide
+	printf "Something grabs you and you lose consciousness" && read -r
+	# go back to sleep		
+	animate_dream_sequence
+	# wake up again at start
+	start_text
+}
+# getting the tarot card
+function quest_card(){
+	printf "Suddenly, you stumble over something! ⏎ " && read -r 
+	printf "... but catch your balance before falling, only to notice a hand grabbing your leg. ⏎ " && read -r 
+	printf "You wish you could scream but your voice doesn't seem to work ⏎ " && read -r 
+	say -v Amelie "Qui me marche dessus pendant que je dors."
+	printf "The startled napper jumps up to her feet and dusts herself off ⏎ " && read -r
+	say -v Amelie "Eh bien, qui es-tu?"
+	printf "You notice your voice has returned as you let out a long sigh of relief ⏎ " && read -r
+	printf "You quickly glance into the stranger's eyes and sense a degree of artificiality ⏎ " && read -r
+	printf "A faint metallic glimmer shows just under the skin ⏎ " && read -r
+	printf "\n"
+	read -rp "Should you tell her your name? >> " NAME
+	if [ ! "${NAME}" ]; then
+		say -r 10 -v Amelie "Sans nom? Ok alors ton nom est....... impoli"
+		NAME="Impoli"
+	else
+		say -v Amelie "${NAME}, c'est terrible de te rencontrer"
+		printf "(she seems kind of rude) ⏎ " && read -r
+		say -v Amelie "Quoi qu'il en soit, ${NAME}"
+		sleep 1
+		say -v Amelie "Vous pouvez peut-être être utile"
+		say -v Amelie "Connaissez-vous le nom de cette chanson?"
+		sleep 1
+		say -v Amelie "Il est coincé dans ma tête et perturbe mon sommeil"
+		printf "You listen to the song... ⏎ " && read -r
+		/usr/bin/osascript -e "set Volume 4"
+		read -rp "The name of the song is... " SONG
+		/usr/bin/osascript -e "set Volume 2"
+		if [ "$(echo "${SONG}" | grep -E ".*[M|m]oonlit [S|s]onata.*")" ]; then
+			say -r 100 -v Amelie "Ahhhh"
+			say -r 90 -v Amelie "Beethoven"
+			sleep 1
+			say -v Amelie "Je déteste cette chanson"
+			sleep 1
+			say -v Amelie "Ici. J'ai trouvé ça, vous pouvez l'avoir. Prends-le."
+			printf "The sentient bipedal takes your hands and puts a card in them ⏎ " && read -r
+			qlmanage -p ${SOURCEPATH}/.hood/luna-tarot_front.jpg 2>/dev/null 1>/dev/null
+			printf '\e[5t'
+			printf "You turn the card over and notice a mysterious code ⏎ " && read -r
+			qlmanage -p ${SOURCEPATH}/.hood/luna-tarot_back.jpg 2>/dev/null 1>/dev/null
+			printf '\e[5t'
+			printf "You put the card in your pocket for safe-keeping ⏎ " && read -r						
+			POCKET+=" card "
+			POCKET=$(echo -e "${POCKET// /\\n}" | sort -u)						
+			STIMULUS[$seed]='done'
+		else
+			say -r 89 -v Amelie "Êtes-vous sûr de cela?"
+		fi
+	fi
+	say -r 90 -v Amelie "Dors maintenant"	
 }
 function walk(){
-#
-case ${STIMULUS[$seed]} in
-	'song' )
-		printf "The song gets louder as you walk through the trees ⏎ " && read
-		printf "It seems familiar but you can't put your finger on it ⏎ " && read
-		printf "The longer you walk the less aware you are of your surroundings ⏎ " && read
-		case ${SKYCOLOR[$seed]} in
-			'purple' )
-				printf "You look up and notice the odd purple grape sky ⏎ " && read
-				printf "You can almost taste it ⏎ " && read
-				printf "Suddenly, you stumble over something! ⏎ " && read
-				printf "... but catch your balance before falling, only to notice a hand grabbing your leg. ⏎ " && read
-				printf "You wish you could scream but your voice doesn't seem to work."
-				say -v Thomas "Qui me marche dessus pendant que je dors!"
-				printf "The startled napper jumps up to his feet and dusts himself off ⏎ " && read
-				say -v Thomas "Eh bien, qui es-tu?"
-				printf "You notice your voice has returned as you let out a long sigh of relief ⏎ " && read
-				read -p "--> " NAME
-				if [ ! ${NAME} ]; then
-					say -r 10 -v Thomas "Sans nom? Ok alors ton nom est....... impoli"
-				else
-					say -v Thomas "${NAME}, c'est terrible de te rencontrer"
-					say -v Thomas "${NAME}, c'est terrible de te rencontrer"
-					say -v Thomas "Quoi qu'il en soit, ${NAME}"
-					say -v Thomas "Vous pouvez peut-être être utile"
-					say -v Thomas "Connaissez-vous le nom de cette chanson?"
-					say -v Thomas "It is stuck in my head and disturbs my sleep"
-					say -v Thomas "Il est coincé dans ma tête et perturbe mon sommeil"
-					printf "You listen to the song... ⏎ " && read
-					read -p "The name of the song is... " SONG
-				fi
-			;;
-			'red' )
-			;;
-			'green' )
-			;;
-			'orange' )
-			;;
-		esac
-	;;
-	'shadow')
-		case ${SKYCOLOR[$seed]} in
-			'purple' )
+	case ${STIMULUS[$seed]} in
+		'song' )
+			/usr/bin/osascript -e "set Volume 1.5"
+			printf "The song gets louder as you walk through the trees ⏎ " && read -r
+			"${SOURCEPATH}"/.hood/VLC.app/Contents/MacOS/VLC -I dummy --repeat "${SOURCEPATH}"/.hood/moonlit-sonata.mp3 1>/dev/null 2>/dev/null &
+			VLCPID=$!
+			sleep 3
+			printf "It seems familiar but you can't put your finger on it ⏎ " && read -r
+			printf "\nYou continue walking ... "
+			sleep 5
+			printf "The longer you walk the less aware you are of your surroundings ⏎ " && read -r && read -r
+			/usr/bin/osascript -e "set Volume 2"
+			case ${SKYCOLOR[$skyseed]} in
+				'purple' )
+					printf "You look up and notice the odd purple grape sky ⏎ " && read -r
+					printf "You can almost taste it ⏎ " && read -r
+					printf "\n"
+					# get tarot card with message
+					quest_card			
+					# kill song
+					kill -9 ${VLCPID}
+					# go back to sleep		
+					animate_dream_sequence
+					# wake up again at start
+					start_text
 				;;
-			'red' )
+				'red' )
+					printf "You look up and notice the strange blushing red sky ⏎ " && read -r
+					printf "You consider the funny thought that the sky is enamored ... with something ⏎ " && read -r
+					printf "\n"
+					printf "You continue ... walking .. for a long time ⏎ " && read -r
+					sleep 3
+					printf "\n"
+					printf "There is nothing around you but the morphed shapes of ancient tree trunks ⏎ " && read -r
+					printf "The trees must be hundreds of years old.. you think... ⏎ " && read -r
+					printf "You notice a particularly strangely shaped tree molded into what looks like a face ... ⏎ " && read -r
+					printf "\n"
+					printf "You approach the gnarly bark and notice that indeed it is a face! With blood red sap dripping from the eyes ... ⏎ " && read -r
+					printf "Creeeeepy ... ⏎ " && read -r
+					printf "\n"
+					say -v Jorge "Hola señorita" 
+					sleep 1
+					printf "You must be hallucinating!!! Did this maple syrup crying tree just speak Spanish to you?? ⏎ " && read -r
+					say -v Jorge "estás perdida soñadora?"
+					printf "OK you resolve that this situation is absolutely strange and potentially terrifying. ⏎ " && read -r
+					printf "The creepy tree appears to be waiting for my response. I should answer his question. ⏎ " && read -r
+					read -r -p "Estás perdida soñadora? >> " RESPONSE
+					if [ "${RESPONSE}" = 'si' ] ; then
+						say -v Jorge "Esta bien"
+						say -v Jorge "Vagar no es perderse"
+						sleep 1
+						say -v Jorge "El extraño que duerme bajo el cielo púrpura te ayudará a despertarte"
+						sleep 1
+						say -v Jorge "Venga"
+						sleep 1
+						say -v Jorge "Ve y duerme"
+						kill -9 ${VLCPID}
+						# go back to sleep		
+						animate_dream_sequence
+						# wake up again at start
+						start_text
+					elif [ "${RESPONSE}" = 'no' ]; then
+						say -v Jorge "No te mientas a ti mismo"
+						sleep 1
+						say -v Jorge "El tarot de la luna muestra tus verdaderos sentimientos"
+						sleep 1
+						say -v Jorge "Ponlo al revés para demostrar que has aprendido"
+						sleep 1					
+						say -v Jorge "Venga"
+						sleep 1
+						say -v Jorge "Ve y despierta"
+						kill -9 ${VLCPID}
+						# go back to sleep		
+						animate_dream_sequence
+						# wake up again at start
+						start_text
+					else
+						say -v Jorge "No entiendo"
+						sleep 1
+						say -v Jorge "Lo siento, debes despertar ahora"
+						kill -9 ${VLCPID}
+						# go back to sleep		
+						animate_dream_sequence
+						# wake up again at start
+						start_text
+					fi
+
 				;;
-			'green' )
+				'green' )
+					printf "\n"
+					printf "You look up and notice how odd it is that the sky is so green ⏎ " && read -r
+					printf "Are you on a different planet? ⏎ " && read -r
+					printf "Are your eyes playing tricks on you? ⏎ " && read -r
+					printf "Could it be the aurora borealis? ⏎ " && read -r
+					printf "Nothing good! That's for sure (or so you resolve) ⏎ " && read -r
+					printf "\n"
+					printf "Lost in thought, you painfully bump your head against something hanging from a large boulder ⏎ " && read -r
+					printf "You lose consciousness .... ⏎ "  && read -r
+					kill -9 ${VLCPID}
+					# go back to sleep		
+					animate_dream_sequence
+					# wake up again at start
+					start_text
 				;;
-			'orange' )
-				;;
-		esac
-	;;
-	'light')
-		case ${SKYCOLOR[$seed]} in
-			'purple' )
-				;;
-			'red' )
-				;;
-			'green' )
-				;;
-			'orange' )
-				;;
-		esac
-	;;
-	'sound')
-		case ${SKYCOLOR[$seed]} in
-			'purple' )
-				;;
-			'red' )
-				;;
-			'green' )
-				;;
-			'orange' )
-				;;
-		esac	
-	;;
-esac
-}
-function run(){
-echo run
+			esac
+			kill -9 ${VLCPID}
+		;;
+		'shadow')
+			case ${SKYCOLOR[$skyseed]} in
+				'purple' )
+					;;
+				'red' )
+					;;
+				'green' )
+					;;
+			esac
+		;;
+		'light')
+			case ${SKYCOLOR[$skyseed]} in
+				'purple' )
+					;;
+				'red' )
+					;;
+				'green' )
+					;;
+			esac
+		;;
+		'done')
+			start
+		;;
+	esac
 }
 function check_item(){
  case ${1} in
- 	'note')
-		echo 'note'
+ 	'card')
+		qlmanage -p ${SOURCEPATH}/.hood/luna-tarot_front.jpg 2>/dev/null 1>/dev/null
+		printf '\e[5t'
+		printf "You turn the card over to see the mysterious code ⏎ " && read -r
+		qlmanage -p ${SOURCEPATH}/.hood/luna-tarot_back.jpg 2>/dev/null 1>/dev/null
 	;;
 	'picture')
 		echo 'note'
@@ -253,17 +463,19 @@ function check_item(){
 		echo 'note'
 	;;
 	'watch')
-		echo 'note'
+	 	countdown "Jan 29 2020"		
  esac
  #
 }
+##################
+# main executable
 #telnet towel.blinkenlights.nl
-#countdown "Jan 29 2020"
+#
+sync
 parameters
 intro
 start_text
-start
-
+exit
 
 
 
