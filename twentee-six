@@ -1,0 +1,270 @@
+#!/bin/bash
+function whereami(){
+	while [ -h "${SOURCE}" ]; do 
+		DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"
+		SOURCE="$(readlink "${SOURCE}")"
+		[[ ${SOURCE} != /* ]] && SOURCE="${DIR}/${SOURCE}"
+	done
+	export DIR="$( cd -P "$( dirname "${SOURCE}" )" && pwd )"	
+	# get where this script lives
+	SOURCEPATH="`dirname \"$0\"`"              # relative
+	export SOURCEPATH="`( cd \"${SOURCEPATH}\" && pwd )`"	
+}
+function countdown(){
+	event=`date -d "$@" +%s`
+	now=`date +%s` 
+	remaining=`expr ${event} - ${now}` 
+	days=`expr ${remaining} % 604800 / 86400`
+	if [ ${days} -eq 0 ]; then
+		${SOURCEPATH}/figlet -c "HAPPY BIRTHDAY"
+	fi
+	while [ ${remaining} -gt 0 ] || [ ! ${ACTION} ]; do
+		now=`date +%s` && remaining=`expr ${event} - ${now}` 
+		seconds=`expr ${remaining} % 60` && remaining=`expr ${remaining} - $seconds` 
+		minutes=`expr ${remaining} % 3600 / 60` && remaining=`expr ${remaining} - $minutes` 
+		hours=`expr ${remaining} % 86400 / 3600` && remaining=`expr ${remaining} - $hours` 
+		days=`expr ${remaining} % 604800 / 86400` && remaining=`expr ${remaining} - $hours` 
+		weeks=`expr ${remaining} / 604800`
+		printf '\r%d weeks %d days %d hours %d minutes %d seconds.. Put Away?' ${weeks} ${days} ${hours} ${minutes} ${seconds}
+		sleep 1
+	done &
+	read
+	kill $!	
+}
+function parameters(){
+	SKYCOLOR=('purple' 'red' 'green' 'orange')
+	STIMULUS=('shadow' 'light' 'sound' 'song')
+	ITEM=('biscuit' 'note' 'picture' 'key' 'watch')
+	VOICES=('Daniel' 'Amelie' 'Fiona' 'Juan' 'Karen')
+	shopt -s extglob
+}
+function intro(){
+	framerate=1
+	textread=5
+	printf '\e[8;50;200t'
+	whereami
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all too" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all too TOO" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all too TOO close" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all too TOO close to" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all too TOO close to home" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all too TOO close to home." && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all too TOO close to home.." && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " In a dimension all too TOO close to home..." && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa "..." & sleep 3
+	osascript -e "set Volume 1"
+	/usr/bin/afplay ${SOURCEPATH}/.hood/hey.mp3 &
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom '"hey"' & sleep 3
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa "." & sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa ".." & sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa "..." & sleep ${framerate}
+	clear && printf '\e[3J'	&& ${SOURCEPATH}/.hood/figlet -w 190 -c " --- ---" && sleep ${framerate}
+	clear && printf '\e[3J'	&& ${SOURCEPATH}/.hood/figlet -w 190 -c " --- ---  z" && sleep ${framerate}
+	clear && printf '\e[3J'	&& ${SOURCEPATH}/.hood/figlet -w 190 -c " --- ---  zZ" && sleep ${framerate}
+	clear && printf '\e[3J'	&& ${SOURCEPATH}/.hood/figlet -w 190 -c " --- ---  zZZ" && sleep ${framerate}
+	osascript -e "set Volume 5"
+	/usr/bin/afplay ${SOURCEPATH}/.hood/hey.mp3 &	
+	osascript -e "set Volume 2"
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom '"HEY!"' & sleep 3
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa " (  o  ) (  o  )" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " --- ---" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa " (o    ) (o    )" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa " (    o) (    o)" && sleep ${framerate}
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f doom " --- ---" && sleep ${framerate}	
+	clear && printf '\e[3J' && ${SOURCEPATH}/.hood/figlet -w 190 -c -f contessa " (  *  ) (  *  )" && sleep ${framerate}	
+	/usr/bin/afplay ${SOURCEPATH}/.hood/intro.mp3 &
+	${SOURCEPATH}/.hood/ASCIIMoviePlayer ${SOURCEPATH}/.hood/stars.mp4
+}
+function start_text(){
+	clear && printf '\e[3J'	
+	seed=$(( ( RANDOM % 4 ) + 0 ))	
+	say -v ${VOICES[$seed]} "You suddenly wake up in a soft bed of grass." &
+	printf "You suddenly wake up in a soft bed of grass. ⏎ " && read
+	say -v ${VOICES[$seed]} "You feel like you have been dreaming a long time." &
+	printf "You feel like you've been dreaming a long time. ⏎ " && read
+	say -v ${VOICES[$seed]} "You get a feeling that you are not in the right place." &
+	printf "You get a feeling that you are not in the right place. ⏎ " && read
+}
+function start(){
+	clear && printf '\e[3J'
+	say -v ${VOICES[$seed]} "What do you do?" &
+	if [ ${EVENT} ]; then
+		event ${EVENT} ${ACTION}
+	else
+	printf "What do you do?\n"		
+	read ACTION
+	case ${ACTION} in
+		'sleep'|'lay down'|'lie down'|'dream')
+			printf 'You go back to sleep ⏎ ' && read
+			start_text
+		;;
+		'stand up'|'get up'|'stand'|'sit up' | 'sit down')
+			printf "You ${ACTION} ⏎ " && read
+			printf "You notice a ${ITEM[$seed]} in your pocket ⏎ " && read
+			POCKET+=" ${ITEM[$seed]} "
+			POCKET=$(echo -e "${POCKET// /\\n}" | sort -u)
+			start			
+		;;
+		'check pockets')
+			printf 'You check your pockets ⏎ ' && read
+			if ${POCKET}; then
+				printf "You find: " && printf "a %s .. " ${POCKET} && printf ' ⏎ ' && read
+			else
+				printf "Your pockets are empty"
+			fi
+			start			
+		;;		
+		 *${ITEM[$seed]})
+			printf "You take out the ${ITEM[$seed]} " && read
+			check_item
+		;;
+		'look around')
+			printf "You notice the sky is an odd shade of ${SKYCOLOR[$seed]} ⏎ " && read
+			printf "You notice a ${STIMULUS[$seed]} coming from the treeline ⏎ " && read
+			start
+		;;
+		'listen')
+			printf "You notice the sky is an odd shade of ${SKYCOLOR[$seed]} ⏎ " && read
+			printf "You notice a ${STIMULUS[$seed]} coming from the treeline ⏎ " && read
+			start
+		;;		
+		'walk')
+			printf "You walk towards the ${STIMULUS[$seed]} ⏎ " && read
+			walk
+		;;
+		'run')
+			printf "You run like a crazed chipmunk ⏎ " && read
+			run			
+		;;		
+		'hide')
+			printf "You jump into a prickly hedge ⏎ " && read
+			printf "The ${STIMULUS[$seed]} gets closer ⏎ " && read
+			hide
+		;;
+		*)
+			printf "Sorry that action is not available in this dimension (yet)... ⏎ " && read
+			start
+	esac
+	clear
+	start
+	fi	
+}
+function event(){
+echo ''
+}
+function hide(){
+echo hide
+}
+function walk(){
+#
+case ${STIMULUS[$seed]} in
+	'song' )
+		printf "The song gets louder as you walk through the trees ⏎ " && read
+		printf "It seems familiar but you can't put your finger on it ⏎ " && read
+		printf "The longer you walk the less aware you are of your surroundings ⏎ " && read
+		case ${SKYCOLOR[$seed]} in
+			'purple' )
+				printf "You look up and notice the odd purple grape sky ⏎ " && read
+				printf "You can almost taste it ⏎ " && read
+				printf "Suddenly, you stumble over something! ⏎ " && read
+				printf "... but catch your balance before falling, only to notice a hand grabbing your leg. ⏎ " && read
+				printf "You wish you could scream but your voice doesn't seem to work."
+				say -v Thomas "Qui me marche dessus pendant que je dors!"
+				printf "The startled napper jumps up to his feet and dusts himself off ⏎ " && read
+				say -v Thomas "Eh bien, qui es-tu?"
+				printf "You notice your voice has returned as you let out a long sigh of relief ⏎ " && read
+				read -p "--> " NAME
+				if [ ! ${NAME} ]; then
+					say -r 10 -v Thomas "Sans nom? Ok alors ton nom est....... impoli"
+				else
+					say -v Thomas "${NAME}, c'est terrible de te rencontrer"
+					say -v Thomas "${NAME}, c'est terrible de te rencontrer"
+					say -v Thomas "Quoi qu'il en soit, ${NAME}"
+					say -v Thomas "Vous pouvez peut-être être utile"
+					say -v Thomas "Connaissez-vous le nom de cette chanson?"
+					say -v Thomas "It is stuck in my head and disturbs my sleep"
+					say -v Thomas "Il est coincé dans ma tête et perturbe mon sommeil"
+					printf "You listen to the song... ⏎ " && read
+					read -p "The name of the song is... " SONG
+				fi
+			;;
+			'red' )
+			;;
+			'green' )
+			;;
+			'orange' )
+			;;
+		esac
+	;;
+	'shadow')
+		case ${SKYCOLOR[$seed]} in
+			'purple' )
+				;;
+			'red' )
+				;;
+			'green' )
+				;;
+			'orange' )
+				;;
+		esac
+	;;
+	'light')
+		case ${SKYCOLOR[$seed]} in
+			'purple' )
+				;;
+			'red' )
+				;;
+			'green' )
+				;;
+			'orange' )
+				;;
+		esac
+	;;
+	'sound')
+		case ${SKYCOLOR[$seed]} in
+			'purple' )
+				;;
+			'red' )
+				;;
+			'green' )
+				;;
+			'orange' )
+				;;
+		esac	
+	;;
+esac
+}
+function run(){
+echo run
+}
+function check_item(){
+ case ${1} in
+ 	'note')
+		echo 'note'
+	;;
+	'picture')
+		echo 'note'
+	;;
+	'key')
+		echo 'note'
+	;;
+	'watch')
+		echo 'note'
+ esac
+ #
+}
+#telnet towel.blinkenlights.nl
+#countdown "Jan 29 2020"
+parameters
+intro
+start_text
+start
+
+
+
+
+	
