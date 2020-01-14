@@ -292,7 +292,7 @@ function quest_card(){
 		/usr/bin/osascript -e "set Volume 4"
 		read -rp "The name of the song is... " SONG
 		/usr/bin/osascript -e "set Volume 2"
-		if [ "$(echo "${SONG}" | grep -E ".*[M|m]oonlit [S|s]onata.*")" ]; then
+		if [ "$(echo "${SONG}" | grep -E ".*[M|m]oonlight [S|s]onata.*")" ]; then
 			say -r 100 -v Amelie "Ahhhh"
 			say -r 90 -v Amelie "Beethoven"
 			sleep 1
