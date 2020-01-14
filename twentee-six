@@ -5,7 +5,7 @@ shopt -s extglob
 function sync(){
 	whereami
 	cd ${SOURCEPATH}
-	git pull 1>/dev/null 2>/dev/null
+	git pull
 }
 # function definitions
 function whereami(){
@@ -113,7 +113,6 @@ function start_text(){
 }
 function start(){
 	clear && printf '\e[3J' && printf '\e[5t'
-	read -r
 	if [ "$(echo "${STIMULUS[@]}" | grep 'done' | sort -u | wc -l)" -eq 1 ] ; then
 		EVENT='oracle'
 	else
